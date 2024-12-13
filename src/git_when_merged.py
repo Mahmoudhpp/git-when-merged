@@ -27,6 +27,7 @@ first-parent history of each BRANCH that contains the COMMIT as an
 ancestor.
 
 """
+from security import safe_command
 
 USAGE = r"""git when-merged [OPTIONS] COMMIT [BRANCH...]
 """
@@ -106,7 +107,7 @@ except ImportError:
     def check_output(*popenargs, **kwargs):
         if 'stdout' in kwargs:
             raise ValueError('stdout argument not allowed, it will be overridden.')
-        process = subprocess.Popen(stdout=subprocess.PIPE, *popenargs, **kwargs)
+        process = safe_command.run(subprocess.Popen, stdout=subprocess.PIPE, *popenargs, **kwargs)
         output, unused_err = process.communicate()
         retcode = process.poll()
         if retcode:
@@ -213,7 +214,7 @@ def describe(arg, contains=False):
         cmd += ['--contains']
     cmd += [arg]
 
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    process = safe_command.run(subprocess.Popen, cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = process.communicate()
     retcode = process.poll()
     if retcode:
@@ -230,8 +231,7 @@ def rev_list(*args):
 
     """
 
-    process = subprocess.Popen(
-        ['git', 'rev-list'] + list(args) + ['--'],
+    process = safe_command.run(subprocess.Popen, ['git', 'rev-list'] + list(args) + ['--'],
         stdout=subprocess.PIPE,
         )
     for line in process.stdout:
@@ -244,7 +244,7 @@ def rev_list(*args):
 
 def rev_list_with_parents(*args):
     cmd = ['git', 'log', '--format=%H %P'] + list(args) + ['--']
-    process = subprocess.Popen(cmd, stdout=subprocess.PIPE)
+    process = safe_command.run(subprocess.Popen, cmd, stdout=subprocess.PIPE)
     for line in process.stdout:
         words = _decode_output(line).strip().split()
         yield (words[0], words[1:])
